@@ -43,6 +43,10 @@ dependencies:
 
   google_fonts: ^6.2.1
 
+  qr_flutter: ^4.1.0
+
+  mobile_scanner: ^5.1.1
+
   # Paket untuk simpan token JWT dengan aman
   flutter_secure_storage: ^9.2.2
 

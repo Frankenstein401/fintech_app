@@ -3,78 +3,67 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:fintech_app/services/api_service.dart';
 import 'package:fintech_app/screens/auth/login_screen.dart';
 
-class SetupProfileScreen extends StatefulWidget {
-  final String userId;
-
-  const SetupProfileScreen({super.key, required this.userId});
+class ResetPasswordScreen extends StatefulWidget {
+  final String email;
+  const ResetPasswordScreen({super.key, required this.email});
 
   @override
-  State<SetupProfileScreen> createState() => _SetupProfileScreenState();
+  State<ResetPasswordScreen> createState() => _ResetPasswordScreenState();
 }
 
-class _SetupProfileScreenState extends State<SetupProfileScreen>
-    with SingleTickerProviderStateMixin {
-  // BACKEND - TIDAK DIUBAH
+class _ResetPasswordScreenState extends State<ResetPasswordScreen>
+    with TickerProviderStateMixin {
   final ApiService _apiService = ApiService();
   bool _isLoading = false;
 
-  final TextEditingController _usernameController = TextEditingController();
-  final TextEditingController _pinController = TextEditingController();
-  final TextEditingController _confirmPinController = TextEditingController(); // NEW
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _otpController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
 
   late AnimationController _fadeController;
+  late AnimationController _floatController;
   late Animation<double> _fadeAnimation;
-
-  // Progress step (0 = username, 1 = PIN, 2 = confirm PIN)
-  int _currentStep = 0;
+  late Animation<double> _floatAnimation;
 
   @override
   void initState() {
     super.initState();
+    _emailController.text = widget.email;
+
+    // Setup animations
     _fadeController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 800),
     );
+    _floatController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 3),
+    )..repeat(reverse: true);
+
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(parent: _fadeController, curve: Curves.easeIn),
     );
+    _floatAnimation = Tween<double>(begin: -10, end: 10).animate(
+      CurvedAnimation(parent: _floatController, curve: Curves.easeInOut),
+    );
+
     _fadeController.forward();
   }
 
   @override
   void dispose() {
-    _usernameController.dispose();
-    _pinController.dispose();
-    _confirmPinController.dispose();
+    _emailController.dispose();
+    _otpController.dispose();
+    _passwordController.dispose();
     _fadeController.dispose();
+    _floatController.dispose();
     super.dispose();
   }
 
-  // BACKEND LOGIC - TIDAK DIUBAH (hanya tambah validasi confirm PIN)
-  void _handleSetupProfile() async {
-    // Validasi username
-    if (_usernameController.text.isEmpty) {
-      _showError("Username wajib diisi.");
-      return;
-    }
-
-    // Validasi PIN
-    if (_pinController.text.isEmpty) {
-      _showError("PIN wajib diisi.");
-      return;
-    }
-    if (_pinController.text.length != 6) {
-      _showError("PIN harus 6 digit.");
-      return;
-    }
-
-    // Validasi Confirm PIN (LOGIKA BARU)
-    if (_confirmPinController.text.isEmpty) {
-      _showError("Konfirmasi PIN wajib diisi.");
-      return;
-    }
-    if (_pinController.text != _confirmPinController.text) {
-      _showError("PIN dan Konfirmasi PIN tidak cocok.");
+  // BACKEND LOGIC - TIDAK DIUBAH
+  void _handleResetPassword() async {
+    if (_otpController.text.isEmpty || _passwordController.text.isEmpty) {
+      _showError("OTP dan Password Baru wajib diisi.");
       return;
     }
 
@@ -82,10 +71,10 @@ class _SetupProfileScreenState extends State<SetupProfileScreen>
       _isLoading = true;
     });
 
-    final result = await _apiService.setupProfile(
-      widget.userId,
-      _usernameController.text,
-      _pinController.text,
+    final result = await _apiService.resetPassword(
+      widget.email,
+      _otpController.text,
+      _passwordController.text,
     );
 
     setState(() {
@@ -149,7 +138,7 @@ class _SetupProfileScreenState extends State<SetupProfileScreen>
               ),
               const SizedBox(height: 16),
               Text(
-                "Registrasi Berhasil!",
+                "Password Berhasil Direset!",
                 style: GoogleFonts.inter(
                   color: Colors.white,
                   fontSize: 20,
@@ -160,7 +149,7 @@ class _SetupProfileScreenState extends State<SetupProfileScreen>
             ],
           ),
           content: Text(
-            "Selamat datang di Our Bank! Akun Anda telah berhasil dibuat. Silakan login untuk melanjutkan.",
+            "Password Anda telah berhasil diubah. Silakan login kembali.",
             style: GoogleFonts.inter(
               color: Colors.white70,
               fontSize: 14,
@@ -201,14 +190,6 @@ class _SetupProfileScreenState extends State<SetupProfileScreen>
     }
   }
 
-  void _updateStep() {
-    setState(() {
-      if (_currentStep < 2) {
-        _currentStep++;
-      }
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -216,159 +197,163 @@ class _SetupProfileScreenState extends State<SetupProfileScreen>
       body: SafeArea(
         child: SingleChildScrollView(
           child: Padding(
-            padding: const EdgeInsets.all(24.0),
+            padding: const EdgeInsets.symmetric(horizontal: 24.0),
             child: FadeTransition(
               opacity: _fadeAnimation,
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const SizedBox(height: 40),
-
-                  // Progress Indicator
-                  _buildProgressIndicator(),
-
-                  const SizedBox(height: 40),
-
-                  // Profile Icon
+                  const SizedBox(height: 20),
+                  
+                  // Back Button
                   Container(
-                    padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [
-                          const Color(0xFF6366F1).withOpacity(0.2),
-                          const Color(0xFF8B5CF6).withOpacity(0.2),
-                        ],
+                      color: Colors.white.withOpacity(0.05),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: Colors.white.withOpacity(0.1),
+                        width: 1,
                       ),
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: const Color(0xFF6366F1).withOpacity(0.3),
-                          blurRadius: 30,
-                          spreadRadius: 10,
-                        ),
-                      ],
                     ),
-                    child: Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
-                        ),
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        Icons.person_add_alt_1,
-                        color: Colors.white,
-                        size: 48,
-                      ),
+                    child: IconButton(
+                      onPressed: () => Navigator.pop(context),
+                      icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 20),
+                    ),
+                  ),
+                  
+                  const SizedBox(height: 30),
+
+                  // 3D Floating Lock Illustration
+                  Center(
+                    child: AnimatedBuilder(
+                      animation: _floatAnimation,
+                      builder: (context, child) {
+                        return Transform.translate(
+                          offset: Offset(0, _floatAnimation.value),
+                          child: Container(
+                            width: 200,
+                            height: 200,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              gradient: RadialGradient(
+                                colors: [
+                                  const Color(0xFF6366F1).withOpacity(0.3),
+                                  const Color(0xFF6366F1).withOpacity(0.0),
+                                ],
+                              ),
+                            ),
+                            child: Stack(
+                              alignment: Alignment.center,
+                              children: [
+                                // Outer rotating ring
+                                TweenAnimationBuilder(
+                                  tween: Tween<double>(begin: 0, end: 1),
+                                  duration: const Duration(seconds: 4),
+                                  builder: (context, double value, child) {
+                                    return Transform.rotate(
+                                      angle: value * 6.28,
+                                      child: Container(
+                                        width: 140,
+                                        height: 140,
+                                        decoration: BoxDecoration(
+                                          shape: BoxShape.circle,
+                                          border: Border.all(
+                                            color: const Color(0xFF6366F1).withOpacity(0.3),
+                                            width: 2,
+                                          ),
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                ),
+                                // Lock icon
+                                Container(
+                                  width: 100,
+                                  height: 100,
+                                  decoration: BoxDecoration(
+                                    gradient: LinearGradient(
+                                      begin: Alignment.topLeft,
+                                      end: Alignment.bottomRight,
+                                      colors: [
+                                        const Color(0xFF6366F1),
+                                        const Color(0xFF8B5CF6),
+                                      ],
+                                    ),
+                                    borderRadius: BorderRadius.circular(24),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: const Color(0xFF6366F1).withOpacity(0.4),
+                                        blurRadius: 30,
+                                        spreadRadius: 5,
+                                      ),
+                                    ],
+                                  ),
+                                  child: const Icon(
+                                    Icons.lock_reset,
+                                    color: Colors.white,
+                                    size: 50,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
                     ),
                   ),
 
-                  const SizedBox(height: 30),
+                  const SizedBox(height: 40),
 
                   // Title
                   Text(
-                    "Setup Profile",
+                    "Reset Password",
                     style: GoogleFonts.inter(
                       color: Colors.white,
-                      fontSize: 28,
+                      fontSize: 32,
                       fontWeight: FontWeight.bold,
                       letterSpacing: -0.5,
                     ),
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    "Lengkapi profil Anda untuk memulai",
+                    "Masukkan kode OTP dan password baru Anda untuk melanjutkan",
                     style: GoogleFonts.inter(
                       color: Colors.white60,
                       fontSize: 14,
+                      height: 1.5,
                     ),
                   ),
-
                   const SizedBox(height: 40),
 
-                  // Username Field
+                  // Email Field (Read Only)
                   _buildModernTextField(
-                    controller: _usernameController,
-                    label: "Username",
-                    icon: Icons.person_outline,
-                    hint: "Pilih username unik Anda",
+                    controller: _emailController,
+                    label: "Email Address",
+                    icon: Icons.email_outlined,
+                    readOnly: true,
                   ),
                   const SizedBox(height: 20),
 
-                  // PIN Field
+                  // OTP Field
                   _buildModernTextField(
-                    controller: _pinController,
-                    label: "6-Digit PIN",
+                    controller: _otpController,
+                    label: "OTP Code",
                     icon: Icons.pin_outlined,
-                    hint: "Buat PIN 6 digit",
-                    obscureText: true,
                     keyboardType: TextInputType.number,
                     maxLength: 6,
-                    onChanged: (value) {
-                      if (value.length == 6 && _currentStep == 1) {
-                        _updateStep();
-                      }
-                    },
                   ),
                   const SizedBox(height: 20),
 
-                  // Confirm PIN Field
+                  // Password Field
                   _buildModernTextField(
-                    controller: _confirmPinController,
-                    label: "Confirm PIN",
+                    controller: _passwordController,
+                    label: "New Password",
                     icon: Icons.lock_outline,
-                    hint: "Masukkan ulang PIN Anda",
                     obscureText: true,
-                    keyboardType: TextInputType.number,
-                    maxLength: 6,
                   ),
-
-                  const SizedBox(height: 30),
-
-                  // Security Info Card
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF6366F1).withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: const Color(0xFF6366F1).withOpacity(0.2),
-                        width: 1,
-                      ),
-                    ),
-                    child: Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF6366F1).withOpacity(0.2),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: const Icon(
-                            Icons.security,
-                            color: Color(0xFF6366F1),
-                            size: 20,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Text(
-                            "PIN Anda akan digunakan untuk autentikasi transaksi",
-                            style: GoogleFonts.inter(
-                              color: Colors.white70,
-                              fontSize: 12,
-                              height: 1.4,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-
                   const SizedBox(height: 40),
 
-                  // Complete Setup Button
+                  // Reset Button
                   Container(
                     width: double.infinity,
                     height: 56,
@@ -388,7 +373,7 @@ class _SetupProfileScreenState extends State<SetupProfileScreen>
                       ],
                     ),
                     child: ElevatedButton(
-                      onPressed: _isLoading ? null : _handleSetupProfile,
+                      onPressed: _isLoading ? null : _handleResetPassword,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.transparent,
                         shadowColor: Colors.transparent,
@@ -405,25 +390,18 @@ class _SetupProfileScreenState extends State<SetupProfileScreen>
                                 strokeWidth: 2.5,
                               ),
                             )
-                          : Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                const Icon(Icons.check_circle, size: 20),
-                                const SizedBox(width: 8),
-                                Text(
-                                  "Complete Setup",
-                                  style: GoogleFonts.inter(
-                                    fontSize: 16,
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.w600,
-                                    letterSpacing: 0.5,
-                                  ),
-                                ),
-                              ],
+                          : Text(
+                              "Reset Password",
+                              style: GoogleFonts.inter(
+                                fontSize: 16,
+                                color: Colors.white,
+                                fontWeight: FontWeight.w600,
+                                letterSpacing: 0.5,
+                              ),
                             ),
                     ),
                   ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 40),
                 ],
               ),
             ),
@@ -433,55 +411,14 @@ class _SetupProfileScreenState extends State<SetupProfileScreen>
     );
   }
 
-  Widget _buildProgressIndicator() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: List.generate(3, (index) {
-        bool isCompleted = index <= _currentStep;
-        bool isCurrent = index == _currentStep;
-
-        return Row(
-          children: [
-            Container(
-              width: isCurrent ? 12 : 8,
-              height: isCurrent ? 12 : 8,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: isCompleted
-                    ? const Color(0xFF6366F1)
-                    : Colors.white.withOpacity(0.2),
-                border: isCurrent
-                    ? Border.all(color: const Color(0xFF6366F1), width: 2)
-                    : null,
-              ),
-            ),
-            if (index < 2)
-              Container(
-                width: 40,
-                height: 2,
-                margin: const EdgeInsets.symmetric(horizontal: 8),
-                decoration: BoxDecoration(
-                  color: isCompleted
-                      ? const Color(0xFF6366F1)
-                      : Colors.white.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-          ],
-        );
-      }),
-    );
-  }
-
   Widget _buildModernTextField({
     required TextEditingController controller,
     required String label,
     required IconData icon,
-    required String hint,
     bool obscureText = false,
     TextInputType keyboardType = TextInputType.text,
     int? maxLength,
-    Function(String)? onChanged,
+    bool readOnly = false,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -509,7 +446,7 @@ class _SetupProfileScreenState extends State<SetupProfileScreen>
             obscureText: obscureText,
             keyboardType: keyboardType,
             maxLength: maxLength,
-            onChanged: onChanged,
+            readOnly: readOnly,
             style: GoogleFonts.inter(
               color: Colors.white,
               fontSize: 15,
@@ -523,7 +460,7 @@ class _SetupProfileScreenState extends State<SetupProfileScreen>
                 child: Icon(icon, color: const Color(0xFF6366F1), size: 22),
               ),
               prefixIconConstraints: const BoxConstraints(minWidth: 50),
-              hintText: hint,
+              hintText: readOnly ? null : "Enter $label",
               hintStyle: GoogleFonts.inter(
                 color: Colors.white30,
                 fontSize: 15,
