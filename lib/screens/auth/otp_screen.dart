@@ -16,8 +16,10 @@ class OtpScreen extends StatefulWidget {
 
 class _OtpScreenState extends State<OtpScreen>
     with SingleTickerProviderStateMixin {
-  final List<TextEditingController> _otpControllers =
-      List.generate(6, (index) => TextEditingController());
+  final List<TextEditingController> _otpControllers = List.generate(
+    6,
+    (index) => TextEditingController(),
+  );
   final List<FocusNode> _focusNodes = List.generate(6, (index) => FocusNode());
 
   final ApiService _apiService = ApiService();
@@ -40,9 +42,10 @@ class _OtpScreenState extends State<OtpScreen>
       vsync: this,
       duration: const Duration(milliseconds: 800),
     );
-    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _fadeController, curve: Curves.easeIn),
-    );
+    _fadeAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _fadeController, curve: Curves.easeIn));
     _fadeController.forward();
   }
 
@@ -50,7 +53,7 @@ class _OtpScreenState extends State<OtpScreen>
     _remainingSeconds = 300;
     _canResend = false;
     _timer?.cancel();
-    
+
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (mounted) {
         setState(() {
@@ -125,10 +128,10 @@ class _OtpScreenState extends State<OtpScreen>
 
     // TODO: Panggil API /api/auth/resend-otp
     print("Resend OTP untuk userId: ${widget.userId}");
-    
+
     // Reset timer setelah resend
     _startTimer();
-    
+
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -139,14 +142,19 @@ class _OtpScreenState extends State<OtpScreen>
               Expanded(
                 child: Text(
                   "Kode OTP baru telah dikirim!",
-                  style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w500),
+                  style: GoogleFonts.inter(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
               ),
             ],
           ),
           backgroundColor: const Color(0xFF10B981),
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
           margin: const EdgeInsets.all(16),
         ),
       );
@@ -164,14 +172,19 @@ class _OtpScreenState extends State<OtpScreen>
               Expanded(
                 child: Text(
                   message,
-                  style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w500),
+                  style: GoogleFonts.inter(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
               ),
             ],
           ),
           backgroundColor: const Color(0xFFEF4444),
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
           margin: const EdgeInsets.all(16),
         ),
       );
@@ -181,7 +194,10 @@ class _OtpScreenState extends State<OtpScreen>
   @override
   Widget build(BuildContext context) {
     String maskedEmail = widget.email.replaceRange(
-        3, widget.email.indexOf('@'), '***');
+      3,
+      widget.email.indexOf('@'),
+      '***',
+    );
 
     return Scaffold(
       backgroundColor: const Color(0xFF0F0F1E),
@@ -343,26 +359,33 @@ class _OtpScreenState extends State<OtpScreen>
                           controller: _otpControllers[index],
                           focusNode: _focusNodes[index],
                           keyboardType: TextInputType.number,
-                          textAlign: TextAlign.center,
+                          textAlign: TextAlign.center, // ⬅️ Tetap (Horizontal)
+                          // ⬇️ TAMBAHKAN 1 BARIS INI (Vertical) ⬇️
+                          textAlignVertical: TextAlignVertical.center,
+
                           maxLength: 1,
                           style: GoogleFonts.inter(
                             color: Colors.white,
                             fontSize: 24,
                             fontWeight: FontWeight.bold,
-                            height: 1.2,
                           ),
                           decoration: const InputDecoration(
                             counterText: "",
                             border: InputBorder.none,
+
+                            // ⬇️ KEMBALIKAN/TAMBAHKAN INI ⬇️
+                            // Ini penting untuk menghapus padding internal TextField
                             contentPadding: EdgeInsets.zero,
                           ),
                           onChanged: (value) {
                             if (value.length == 1 && index < 5) {
-                              FocusScope.of(context)
-                                  .requestFocus(_focusNodes[index + 1]);
+                              FocusScope.of(
+                                context,
+                              ).requestFocus(_focusNodes[index + 1]);
                             } else if (value.isEmpty && index > 0) {
-                              FocusScope.of(context)
-                                  .requestFocus(_focusNodes[index - 1]);
+                              FocusScope.of(
+                                context,
+                              ).requestFocus(_focusNodes[index - 1]);
                             }
                             if (_otpCode.length == 6) {
                               _onOtpCompleted();
@@ -445,7 +468,10 @@ class _OtpScreenState extends State<OtpScreen>
                           : Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                const Icon(Icons.check_circle_outline, size: 20),
+                                const Icon(
+                                  Icons.check_circle_outline,
+                                  size: 20,
+                                ),
                                 const SizedBox(width: 8),
                                 Text(
                                   "Verify Code",

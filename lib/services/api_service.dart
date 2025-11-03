@@ -11,7 +11,7 @@ import 'package:fintech_app/models/favorite_model.dart';
 
 class ApiService {
   // ⬅️ GANTI DENGAN IP KOMPUTER BOS
-  final String _baseUrl = "http://10.19.17.12:8000/api";
+  final String _baseUrl = "http://192.168.1.4:8000/api";
   final _storage = const FlutterSecureStorage();
 
   Future<String?> _getToken() async {

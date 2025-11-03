@@ -1,23 +1,26 @@
-// File: lib/screens/transfer/send_external_screen.dart
-// FUTURISTIC REDESIGN - External Transfer with Platform Selection
+// File: lib/screens/auth/reset_pin_screen.dart
+// FUTURISTIC REDESIGN - Reset PIN with Modern UI
 
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:fintech_app/services/api_service.dart';
 
-class SendExternalScreen extends StatefulWidget {
-  const SendExternalScreen({super.key});
+class ResetPinScreen extends StatefulWidget {
+  final String email;
+  const ResetPinScreen({super.key, required this.email});
 
   @override
-  State<SendExternalScreen> createState() => _SendExternalScreenState();
+  State<ResetPinScreen> createState() => _ResetPinScreenState();
 }
 
-class _SendExternalScreenState extends State<SendExternalScreen> with TickerProviderStateMixin {
+class _ResetPinScreenState extends State<ResetPinScreen>
+    with TickerProviderStateMixin {
+  final ApiService _apiService = ApiService();
   bool _isLoading = false;
-  String? _selectedPlatform;
 
-  final TextEditingController _recipientController = TextEditingController();
-  final TextEditingController _amountController = TextEditingController();
-  final TextEditingController _pinController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _otpController = TextEditingController();
+  final TextEditingController _newPinController = TextEditingController();
 
   // Animation Controllers
   late AnimationController _fadeController;
@@ -28,49 +31,10 @@ class _SendExternalScreenState extends State<SendExternalScreen> with TickerProv
   late Animation<Offset> _slideAnimation;
   late Animation<double> _floatAnimation;
 
-  // Platform Data with Branded Colors
-  final List<Map<String, dynamic>> platforms = [
-    {
-      'name': 'DANA',
-      'initial': 'D',
-      'icon': Icons.account_balance_wallet,
-      'color': const Color(0xFF1A8FE3), // DANA Blue
-    },
-    {
-      'name': 'GoPay',
-      'initial': 'G',
-      'icon': Icons.payments,
-      'color': const Color(0xFF00AA13), // GoPay Green
-    },
-    {
-      'name': 'OVO',
-      'initial': 'O',
-      'icon': Icons.circle,
-      'color': const Color(0xFF4F3492), // OVO Purple
-    },
-    {
-      'name': 'ShopeePay',
-      'initial': 'S',
-      'icon': Icons.shopping_bag,
-      'color': const Color(0xFFEE4D2D), // Shopee Orange
-    },
-    {
-      'name': 'LinkAja',
-      'initial': 'L',
-      'icon': Icons.link,
-      'color': const Color(0xFFED1C24), // LinkAja Red
-    },
-    {
-      'name': 'BCA',
-      'initial': 'B',
-      'icon': Icons.account_balance,
-      'color': const Color(0xFF003D99), // BCA Blue
-    },
-  ];
-
   @override
   void initState() {
     super.initState();
+    _emailController.text = widget.email;
 
     _fadeController = AnimationController(
       vsync: this,
@@ -106,25 +70,22 @@ class _SendExternalScreenState extends State<SendExternalScreen> with TickerProv
 
   @override
   void dispose() {
-    _recipientController.dispose();
-    _amountController.dispose();
-    _pinController.dispose();
+    _emailController.dispose();
+    _otpController.dispose();
+    _newPinController.dispose();
     _fadeController.dispose();
     _slideController.dispose();
     _floatController.dispose();
     super.dispose();
   }
 
-  void _handleDummyTransfer() async {
-    if (_recipientController.text.isEmpty ||
-        _amountController.text.isEmpty ||
-        _pinController.text.isEmpty) {
-      _showError("Harap lengkapi semua field");
+  void _handleResetPin() async {
+    if (_otpController.text.isEmpty || _newPinController.text.isEmpty) {
+      _showError("OTP dan PIN Baru wajib diisi.");
       return;
     }
-
-    if (_selectedPlatform == null) {
-      _showError("Pilih platform tujuan");
+    if (_newPinController.text.length != 6) {
+      _showError("PIN Baru harus 6 digit.");
       return;
     }
 
@@ -132,13 +93,21 @@ class _SendExternalScreenState extends State<SendExternalScreen> with TickerProv
       _isLoading = true;
     });
 
-    await Future.delayed(const Duration(seconds: 2));
+    final result = await _apiService.resetPin(
+      widget.email,
+      _otpController.text,
+      _newPinController.text,
+    );
 
     setState(() {
       _isLoading = false;
     });
 
-    _showFeatureNotReady();
+    if (result['success'] == true) {
+      _showSuccessDialog();
+    } else {
+      _showError(result['message']);
+    }
   }
 
   void _showError(String message) {
@@ -164,10 +133,11 @@ class _SendExternalScreenState extends State<SendExternalScreen> with TickerProv
     }
   }
 
-  void _showFeatureNotReady() {
+  void _showSuccessDialog() {
     if (mounted) {
       showDialog(
         context: context,
+        barrierDismissible: false,
         builder: (context) => Dialog(
           backgroundColor: Colors.transparent,
           child: Container(
@@ -183,12 +153,12 @@ class _SendExternalScreenState extends State<SendExternalScreen> with TickerProv
               ),
               borderRadius: BorderRadius.circular(24),
               border: Border.all(
-                color: const Color(0xFF6366F1).withOpacity(0.3),
+                color: const Color(0xFF10B981).withOpacity(0.3),
                 width: 1,
               ),
               boxShadow: [
                 BoxShadow(
-                  color: const Color(0xFF6366F1).withOpacity(0.3),
+                  color: const Color(0xFF10B981).withOpacity(0.3),
                   blurRadius: 30,
                   spreadRadius: 5,
                 ),
@@ -201,26 +171,26 @@ class _SendExternalScreenState extends State<SendExternalScreen> with TickerProv
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
                     gradient: const LinearGradient(
-                      colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
+                      colors: [Color(0xFF10B981), Color(0xFF059669)],
                     ),
                     shape: BoxShape.circle,
                     boxShadow: [
                       BoxShadow(
-                        color: const Color(0xFF6366F1).withOpacity(0.5),
+                        color: const Color(0xFF10B981).withOpacity(0.5),
                         blurRadius: 20,
                         spreadRadius: 3,
                       ),
                     ],
                   ),
                   child: const Icon(
-                    Icons.info_outline,
+                    Icons.check_rounded,
                     color: Colors.white,
                     size: 48,
                   ),
                 ),
                 const SizedBox(height: 20),
                 Text(
-                  "Fitur Akan Datang",
+                  "PIN Berhasil Direset!",
                   style: GoogleFonts.inter(
                     color: Colors.white,
                     fontSize: 22,
@@ -228,32 +198,31 @@ class _SendExternalScreenState extends State<SendExternalScreen> with TickerProv
                   ),
                 ),
                 const SizedBox(height: 12),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 10),
-                  child: Text(
-                    "Integrasi ke $_selectedPlatform sedang dalam pengembangan dan akan segera hadir.",
-                    style: GoogleFonts.inter(
-                      color: Colors.white70,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                    ),
-                    textAlign: TextAlign.center,
+                Text(
+                  "PIN Anda telah berhasil diubah.",
+                  style: GoogleFonts.inter(
+                    color: Colors.white70,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
                   ),
+                  textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 24),
                 GestureDetector(
-                  onTap: () => Navigator.of(context).pop(),
+                  onTap: () {
+                    Navigator.of(context).popUntil((route) => route.isFirst);
+                  },
                   child: Container(
                     width: double.infinity,
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     decoration: BoxDecoration(
                       gradient: const LinearGradient(
-                        colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
+                        colors: [Color(0xFF10B981), Color(0xFF059669)],
                       ),
                       borderRadius: BorderRadius.circular(12),
                       boxShadow: [
                         BoxShadow(
-                          color: const Color(0xFF6366F1).withOpacity(0.4),
+                          color: const Color(0xFF10B981).withOpacity(0.4),
                           blurRadius: 12,
                           offset: const Offset(0, 4),
                         ),
@@ -298,22 +267,19 @@ class _SendExternalScreenState extends State<SendExternalScreen> with TickerProv
                         child: Padding(
                           padding: const EdgeInsets.all(20.0),
                           child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const SizedBox(height: 10),
-                              _buildSectionTitle("Informasi Transfer"),
                               const SizedBox(height: 20),
-                              _buildRecipientCard(),
+                              _buildWelcomeCard(),
+                              const SizedBox(height: 30),
+                              _buildEmailCard(),
                               const SizedBox(height: 20),
-                              _buildAmountCard(),
+                              _buildOtpCard(),
                               const SizedBox(height: 20),
                               _buildPinCard(),
                               const SizedBox(height: 30),
-                              _buildSectionTitle("Pilih Platform Tujuan"),
-                              const SizedBox(height: 20),
-                              _buildPlatformGrid(),
+                              _buildSecurityNote(),
                               const SizedBox(height: 30),
-                              _buildSubmitButton(),
+                              _buildResetButton(),
                               const SizedBox(height: 20),
                             ],
                           ),
@@ -333,9 +299,8 @@ class _SendExternalScreenState extends State<SendExternalScreen> with TickerProv
   Widget _buildBackgroundDecorations() {
     return Stack(
       children: [
-        // Top Right - Send money icon
         Positioned(
-          right: -30,
+          right: -40,
           top: 100,
           child: AnimatedBuilder(
             animation: _floatAnimation,
@@ -345,8 +310,8 @@ class _SendExternalScreenState extends State<SendExternalScreen> with TickerProv
                 child: Opacity(
                   opacity: 0.05,
                   child: Icon(
-                    Icons.send_to_mobile,
-                    size: 140,
+                    Icons.lock_reset,
+                    size: 150,
                     color: const Color(0xFF6366F1),
                   ),
                 ),
@@ -354,10 +319,8 @@ class _SendExternalScreenState extends State<SendExternalScreen> with TickerProv
             },
           ),
         ),
-
-        // Bottom Left - Payment gateway
         Positioned(
-          left: -40,
+          left: -50,
           bottom: 150,
           child: AnimatedBuilder(
             animation: _floatAnimation,
@@ -365,45 +328,15 @@ class _SendExternalScreenState extends State<SendExternalScreen> with TickerProv
               return Transform.translate(
                 offset: Offset(0, -_floatAnimation.value),
                 child: Opacity(
-                  opacity: 0.06,
+                  opacity: 0.04,
                   child: Icon(
-                    Icons.phonelink_ring,
-                    size: 160,
+                    Icons.security,
+                    size: 180,
                     color: const Color(0xFF8B5CF6),
                   ),
                 ),
               );
             },
-          ),
-        ),
-
-        // Arrows right (external transfer)
-        Positioned(
-          right: 50,
-          top: 300,
-          child: Opacity(
-            opacity: 0.08,
-            child: Column(
-              children: [
-                Icon(
-                  Icons.arrow_forward_rounded,
-                  size: 30,
-                  color: const Color(0xFF6366F1),
-                ),
-                const SizedBox(height: 10),
-                Icon(
-                  Icons.arrow_forward_rounded,
-                  size: 30,
-                  color: const Color(0xFF6366F1),
-                ),
-                const SizedBox(height: 10),
-                Icon(
-                  Icons.arrow_forward_rounded,
-                  size: 30,
-                  color: const Color(0xFF6366F1),
-                ),
-              ],
-            ),
           ),
         ),
       ],
@@ -439,19 +372,19 @@ class _SendExternalScreenState extends State<SendExternalScreen> with TickerProv
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
               gradient: const LinearGradient(
-                colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
+                colors: [Color(0xFFEF4444), Color(0xFFDC2626)],
               ),
               borderRadius: BorderRadius.circular(12),
               boxShadow: [
                 BoxShadow(
-                  color: const Color(0xFF6366F1).withOpacity(0.3),
+                  color: const Color(0xFFEF4444).withOpacity(0.3),
                   blurRadius: 12,
                   spreadRadius: 2,
                 ),
               ],
             ),
             child: const Icon(
-              Icons.send_to_mobile,
+              Icons.lock_reset,
               color: Colors.white,
               size: 22,
             ),
@@ -462,7 +395,7 @@ class _SendExternalScreenState extends State<SendExternalScreen> with TickerProv
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  "Kirim External",
+                  "Reset PIN",
                   style: GoogleFonts.inter(
                     color: Colors.white,
                     fontSize: 20,
@@ -471,7 +404,7 @@ class _SendExternalScreenState extends State<SendExternalScreen> with TickerProv
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  "Transfer ke bank & e-wallet lain",
+                  "Ubah PIN keamanan Anda",
                   style: GoogleFonts.inter(
                     color: Colors.white60,
                     fontSize: 12,
@@ -486,33 +419,78 @@ class _SendExternalScreenState extends State<SendExternalScreen> with TickerProv
     );
   }
 
-  Widget _buildSectionTitle(String title) {
-    return Row(
-      children: [
-        Container(
-          width: 4,
-          height: 20,
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
+  Widget _buildWelcomeCard() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            const Color(0xFFEF4444).withOpacity(0.15),
+            const Color(0xFFDC2626).withOpacity(0.1),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: const Color(0xFFEF4444).withOpacity(0.3),
+          width: 1,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFEF4444).withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(
+                  Icons.vpn_key,
+                  color: Color(0xFFEF4444),
+                  size: 18,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Text(
+                "Verifikasi Identitas",
+                style: GoogleFonts.inter(
+                  color: const Color(0xFFEF4444),
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Text(
+            "Reset PIN Anda",
+            style: GoogleFonts.inter(
+              color: Colors.white,
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+              letterSpacing: -0.5,
             ),
-            borderRadius: BorderRadius.circular(2),
           ),
-        ),
-        const SizedBox(width: 12),
-        Text(
-          title,
-          style: GoogleFonts.inter(
-            color: Colors.white,
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
+          const SizedBox(height: 8),
+          Text(
+            "Masukkan kode OTP yang telah dikirim ke email Anda dan buat PIN baru untuk keamanan akun",
+            style: GoogleFonts.inter(
+              color: Colors.white70,
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
-  Widget _buildRecipientCard() {
+  Widget _buildEmailCard() {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white.withOpacity(0.05),
@@ -541,14 +519,14 @@ class _SendExternalScreenState extends State<SendExternalScreen> with TickerProv
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: const Icon(
-                    Icons.phone_android,
+                    Icons.email,
                     color: Color(0xFF6366F1),
                     size: 18,
                   ),
                 ),
                 const SizedBox(width: 10),
                 Text(
-                  "No. HP / Rekening Tujuan",
+                  "Email Address",
                   style: GoogleFonts.inter(
                     color: Colors.white,
                     fontSize: 15,
@@ -561,21 +539,21 @@ class _SendExternalScreenState extends State<SendExternalScreen> with TickerProv
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
             child: TextField(
-              controller: _recipientController,
-              keyboardType: TextInputType.number,
+              controller: _emailController,
+              readOnly: true,
               style: GoogleFonts.inter(
-                color: Colors.white,
-                fontSize: 16,
+                color: Colors.white60,
+                fontSize: 15,
                 fontWeight: FontWeight.w500,
               ),
               decoration: InputDecoration(
-                hintText: "Contoh: 081234567890",
-                hintStyle: GoogleFonts.inter(
-                  color: Colors.white,
-                  fontSize: 16,
-                ),
                 border: InputBorder.none,
                 contentPadding: const EdgeInsets.all(0),
+                suffixIcon: Icon(
+                  Icons.lock,
+                  color: Colors.white,
+                  size: 18,
+                ),
               ),
             ),
           ),
@@ -584,7 +562,7 @@ class _SendExternalScreenState extends State<SendExternalScreen> with TickerProv
     );
   }
 
-  Widget _buildAmountCard() {
+  Widget _buildOtpCard() {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white.withOpacity(0.05),
@@ -613,14 +591,14 @@ class _SendExternalScreenState extends State<SendExternalScreen> with TickerProv
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: const Icon(
-                    Icons.attach_money,
+                    Icons.dialpad,
                     color: Color(0xFFFBBF24),
                     size: 18,
                   ),
                 ),
                 const SizedBox(width: 10),
                 Text(
-                  "Jumlah Transfer",
+                  "Kode OTP",
                   style: GoogleFonts.inter(
                     color: Colors.white,
                     fontSize: 15,
@@ -633,31 +611,23 @@ class _SendExternalScreenState extends State<SendExternalScreen> with TickerProv
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
             child: TextField(
-              controller: _amountController,
+              controller: _otpController,
               keyboardType: TextInputType.number,
+              maxLength: 6,
               style: GoogleFonts.inter(
                 color: Colors.white,
-                fontSize: 16,
-                fontWeight: FontWeight.w500,
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 6,
               ),
               decoration: InputDecoration(
-                hintText: "Masukkan jumlah",
+                hintText: "• • • • • •",
                 hintStyle: GoogleFonts.inter(
-                  color: Colors.white,
-                  fontSize: 16,
+                  color: Colors.white30,
+                  fontSize: 20,
+                  letterSpacing: 6,
                 ),
-                prefixIcon: Padding(
-                  padding: const EdgeInsets.only(left: 12, right: 8),
-                  child: Text(
-                    "Rp",
-                    style: GoogleFonts.inter(
-                      color: const Color(0xFFFBBF24),
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-                prefixIconConstraints: const BoxConstraints(minWidth: 0),
+                counterText: "",
                 border: InputBorder.none,
                 contentPadding: const EdgeInsets.all(0),
               ),
@@ -704,7 +674,7 @@ class _SendExternalScreenState extends State<SendExternalScreen> with TickerProv
                 ),
                 const SizedBox(width: 10),
                 Text(
-                  "PIN Keamanan",
+                  "PIN Baru (6 Digit)",
                   style: GoogleFonts.inter(
                     color: Colors.white,
                     fontSize: 15,
@@ -717,7 +687,7 @@ class _SendExternalScreenState extends State<SendExternalScreen> with TickerProv
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
             child: TextField(
-              controller: _pinController,
+              controller: _newPinController,
               obscureText: true,
               keyboardType: TextInputType.number,
               maxLength: 6,
@@ -745,95 +715,55 @@ class _SendExternalScreenState extends State<SendExternalScreen> with TickerProv
     );
   }
 
-  Widget _buildPlatformGrid() {
-    return GridView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 3,
-        crossAxisSpacing: 12,
-        mainAxisSpacing: 12,
-        childAspectRatio: 0.95,
+  Widget _buildSecurityNote() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            const Color(0xFF6366F1).withOpacity(0.1),
+            const Color(0xFF8B5CF6).withOpacity(0.05),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: const Color(0xFF6366F1).withOpacity(0.2),
+          width: 1,
+        ),
       ),
-      itemCount: platforms.length,
-      itemBuilder: (context, index) {
-        final platform = platforms[index];
-        final isSelected = _selectedPlatform == platform['name'];
-
-        return GestureDetector(
-          onTap: () {
-            setState(() {
-              _selectedPlatform = platform['name'];
-            });
-          },
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 300),
-            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.05),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: isSelected
-                    ? platform['color']
-                    : Colors.white.withOpacity(0.1),
-                width: isSelected ? 2 : 1,
-              ),
-              boxShadow: isSelected
-                  ? [
-                      BoxShadow(
-                        color: (platform['color'] as Color).withOpacity(0.3),
-                        blurRadius: 15,
-                        spreadRadius: 2,
-                      ),
-                    ]
-                  : [],
+              color: const Color(0xFF6366F1).withOpacity(0.2),
+              borderRadius: BorderRadius.circular(8),
             ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Logo container dengan background color
-                Container(
-                  width: 48,
-                  height: 48,
-                  decoration: BoxDecoration(
-                    color: (platform['color'] as Color).withOpacity(0.15),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Center(
-                    child: Text(
-                      platform['initial'],
-                      style: GoogleFonts.inter(
-                        color: platform['color'],
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  platform['name'],
-                  style: GoogleFonts.inter(
-                    color: isSelected ? platform['color'] : Colors.white,
-                    fontSize: 12,
-                    fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
-                  ),
-                  textAlign: TextAlign.center,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
+            child: const Icon(
+              Icons.info_outline,
+              color: Color(0xFF6366F1),
+              size: 20,
             ),
           ),
-        );
-      },
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              "Pastikan PIN baru Anda mudah diingat namun sulit ditebak orang lain",
+              style: GoogleFonts.inter(
+                color: Colors.white70,
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
-  Widget _buildSubmitButton() {
+  Widget _buildResetButton() {
     return GestureDetector(
-      onTap: _isLoading ? null : _handleDummyTransfer,
+      onTap: _isLoading ? null : _handleResetPin,
       child: Container(
         width: double.infinity,
         padding: const EdgeInsets.symmetric(vertical: 18),
@@ -846,14 +776,14 @@ class _SendExternalScreenState extends State<SendExternalScreen> with TickerProv
                   ],
                 )
               : const LinearGradient(
-                  colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
+                  colors: [Color(0xFFEF4444), Color(0xFFDC2626)],
                 ),
           borderRadius: BorderRadius.circular(16),
           boxShadow: _isLoading
               ? []
               : [
                   BoxShadow(
-                    color: const Color(0xFF6366F1).withOpacity(0.5),
+                    color: const Color(0xFFEF4444).withOpacity(0.5),
                     blurRadius: 20,
                     spreadRadius: 2,
                     offset: const Offset(0, 8),
@@ -875,13 +805,13 @@ class _SendExternalScreenState extends State<SendExternalScreen> with TickerProv
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   const Icon(
-                    Icons.send_rounded,
+                    Icons.lock_reset,
                     color: Colors.white,
                     size: 24,
                   ),
                   const SizedBox(width: 12),
                   Text(
-                    "Kirim Sekarang",
+                    "Reset PIN",
                     style: GoogleFonts.inter(
                       color: Colors.white,
                       fontSize: 16,

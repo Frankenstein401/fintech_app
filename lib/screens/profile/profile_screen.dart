@@ -1,13 +1,13 @@
 // File: lib/screens/profile/profile_screen.dart
 // REDESIGNED VERSION - Futuristic but Classic
 
+import 'package:fintech_app/screens/auth/reset_pin_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:fintech_app/services/api_service.dart';
 import 'package:fintech_app/models/user_model.dart';
 import 'package:fintech_app/screens/auth/login_screen.dart';
 import 'package:fintech_app/screens/auth/forgot_password_screen.dart';
-import 'package:fintech_app/screens/auth/reset_password_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -48,16 +48,18 @@ class _ProfileScreenState extends State<ProfileScreen>
       duration: const Duration(seconds: 20),
     )..repeat();
 
-    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _fadeController, curve: Curves.easeIn),
-    );
+    _fadeAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _fadeController, curve: Curves.easeIn));
     _slideAnimation = Tween<Offset>(
       begin: const Offset(0, 0.2),
       end: Offset.zero,
-    ).animate(
-      CurvedAnimation(parent: _slideController, curve: Curves.easeOut),
-    );
-    _rotateAnimation = Tween<double>(begin: 0, end: 1).animate(_rotateController);
+    ).animate(CurvedAnimation(parent: _slideController, curve: Curves.easeOut));
+    _rotateAnimation = Tween<double>(
+      begin: 0,
+      end: 1,
+    ).animate(_rotateController);
 
     _fadeController.forward();
     _slideController.forward();
@@ -89,10 +91,12 @@ class _ProfileScreenState extends State<ProfileScreen>
   }
 
   void _showUpdateProfileDialog(User currentUser) {
-    final TextEditingController nameController =
-        TextEditingController(text: currentUser.fullName);
-    final TextEditingController usernameController =
-        TextEditingController(text: currentUser.username);
+    final TextEditingController nameController = TextEditingController(
+      text: currentUser.fullName,
+    );
+    final TextEditingController usernameController = TextEditingController(
+      text: currentUser.username,
+    );
 
     showDialog(
       context: context,
@@ -105,10 +109,7 @@ class _ProfileScreenState extends State<ProfileScreen>
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: [
-                const Color(0xFF1A1A2E),
-                const Color(0xFF0F0F1E),
-              ],
+              colors: [const Color(0xFF1A1A2E), const Color(0xFF0F0F1E)],
             ),
             borderRadius: BorderRadius.circular(24),
             border: Border.all(
@@ -137,7 +138,11 @@ class _ProfileScreenState extends State<ProfileScreen>
                       ),
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: const Icon(Icons.edit, color: Colors.white, size: 20),
+                    child: const Icon(
+                      Icons.edit,
+                      color: Colors.white,
+                      size: 20,
+                    ),
                   ),
                   const SizedBox(width: 12),
                   Text(
@@ -151,7 +156,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                 ],
               ),
               const SizedBox(height: 24),
-              
+
               // Form Fields
               _buildModernDialogTextField(
                 controller: nameController,
@@ -165,7 +170,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                 icon: Icons.alternate_email,
               ),
               const SizedBox(height: 28),
-              
+
               // Action Buttons
               Row(
                 children: [
@@ -213,7 +218,9 @@ class _ProfileScreenState extends State<ProfileScreen>
                         onPressed: () async {
                           Navigator.pop(context);
                           final result = await _apiService.updateProfile(
-                              nameController.text, usernameController.text);
+                            nameController.text,
+                            usernameController.text,
+                          );
                           _showSnackbar(result['message'], !result['success']);
                           if (result['success']) _refreshProfileData();
                         },
@@ -236,6 +243,10 @@ class _ProfileScreenState extends State<ProfileScreen>
     );
   }
 
+  // Update _showChangePasswordDialog() di profile_screen.dart
+  // Tambahkan import ini di atas file:
+  // import 'package:fintech_app/screens/auth/forgot_password_screen.dart';
+
   void _showChangePasswordDialog() {
     final TextEditingController currentPassController = TextEditingController();
     final TextEditingController newPassController = TextEditingController();
@@ -251,10 +262,7 @@ class _ProfileScreenState extends State<ProfileScreen>
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: [
-                const Color(0xFF1A1A2E),
-                const Color(0xFF0F0F1E),
-              ],
+              colors: [const Color(0xFF1A1A2E), const Color(0xFF0F0F1E)],
             ),
             borderRadius: BorderRadius.circular(24),
             border: Border.all(
@@ -282,7 +290,11 @@ class _ProfileScreenState extends State<ProfileScreen>
                       ),
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: const Icon(Icons.lock_reset, color: Colors.white, size: 20),
+                    child: const Icon(
+                      Icons.lock_reset,
+                      color: Colors.white,
+                      size: 20,
+                    ),
                   ),
                   const SizedBox(width: 12),
                   Text(
@@ -309,7 +321,52 @@ class _ProfileScreenState extends State<ProfileScreen>
                 icon: Icons.lock_open,
                 isObscure: true,
               ),
-              const SizedBox(height: 28),
+
+              // ✅ TAMBAHAN: Link "Lupa Password?"
+              const SizedBox(height: 12),
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton(
+                  onPressed: () {
+                    Navigator.pop(context); // Tutup dialog dulu
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const ForgotPasswordScreen(),
+                      ),
+                    );
+                  },
+                  style: TextButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
+                    minimumSize: Size.zero,
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.help_outline,
+                        color: const Color(0xFF6366F1),
+                        size: 16,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        "Lupa Password?",
+                        style: GoogleFonts.inter(
+                          color: const Color(0xFF6366F1),
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 16),
               Row(
                 children: [
                   Expanded(
@@ -356,7 +413,9 @@ class _ProfileScreenState extends State<ProfileScreen>
                         onPressed: () async {
                           Navigator.pop(context);
                           final result = await _apiService.changePassword(
-                              currentPassController.text, newPassController.text);
+                            currentPassController.text,
+                            newPassController.text,
+                          );
                           _showSnackbar(result['message'], !result['success']);
                         },
                         child: Text(
@@ -393,10 +452,7 @@ class _ProfileScreenState extends State<ProfileScreen>
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: [
-                const Color(0xFF1A1A2E),
-                const Color(0xFF0F0F1E),
-              ],
+              colors: [const Color(0xFF1A1A2E), const Color(0xFF0F0F1E)],
             ),
             borderRadius: BorderRadius.circular(24),
             border: Border.all(
@@ -500,7 +556,9 @@ class _ProfileScreenState extends State<ProfileScreen>
                         onPressed: () async {
                           Navigator.pop(context);
                           final result = await _apiService.changePin(
-                              currentPassController.text, newPinController.text);
+                            currentPassController.text,
+                            newPinController.text,
+                          );
                           _showSnackbar(result['message'], !result['success']);
                         },
                         child: Text(
@@ -534,10 +592,7 @@ class _ProfileScreenState extends State<ProfileScreen>
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: [
-                const Color(0xFF1A1A2E),
-                const Color(0xFF0F0F1E),
-              ],
+              colors: [const Color(0xFF1A1A2E), const Color(0xFF0F0F1E)],
             ),
             borderRadius: BorderRadius.circular(24),
             border: Border.all(
@@ -566,7 +621,11 @@ class _ProfileScreenState extends State<ProfileScreen>
                   ),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(Icons.help_outline, color: Color(0xFFFBBF24), size: 40),
+                child: const Icon(
+                  Icons.help_outline,
+                  color: Color(0xFFFBBF24),
+                  size: 40,
+                ),
               ),
               const SizedBox(height: 20),
               Text(
@@ -655,13 +714,16 @@ class _ProfileScreenState extends State<ProfileScreen>
     final result = await _apiService.forgotPin(email);
     _showSnackbar(result['message'], !result['success']);
 
+    // ...
     if (result['success'] && mounted) {
+      // Pindah ke Halaman Lupa PIN (BENAR)
       Navigator.push(
         context,
-        MaterialPageRoute(
-            builder: (context) => ResetPasswordScreen(email: email)),
+        // ⬇️ INI YANG BENAR ⬇️
+        MaterialPageRoute(builder: (context) => ResetPinScreen(email: email)),
       );
     }
+    // ...
   }
 
   void _showSnackbar(String message, bool isError) {
@@ -686,7 +748,9 @@ class _ProfileScreenState extends State<ProfileScreen>
               ),
             ],
           ),
-          backgroundColor: isError ? const Color(0xFFEF4444) : const Color(0xFF10B981),
+          backgroundColor: isError
+              ? const Color(0xFFEF4444)
+              : const Color(0xFF10B981),
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
@@ -774,8 +838,11 @@ class _ProfileScreenState extends State<ProfileScreen>
                           ),
                         ),
                         child: IconButton(
-                          icon: const Icon(Icons.arrow_back_ios_new,
-                              color: Colors.white, size: 20),
+                          icon: const Icon(
+                            Icons.arrow_back_ios_new,
+                            color: Colors.white,
+                            size: 20,
+                          ),
                           onPressed: () => Navigator.of(context).pop(),
                         ),
                       ),
@@ -804,7 +871,8 @@ class _ProfileScreenState extends State<ProfileScreen>
                           ),
                         );
                       }
-                      if (!snapshot.hasData || snapshot.data!['success'] == false) {
+                      if (!snapshot.hasData ||
+                          snapshot.data!['success'] == false) {
                         return Center(
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
@@ -846,21 +914,35 @@ class _ProfileScreenState extends State<ProfileScreen>
 
                                 // Account Information Section
                                 _buildSectionTitle(
-                                    "Informasi Akun", Icons.person_outline),
+                                  "Informasi Akun",
+                                  Icons.person_outline,
+                                ),
                                 const SizedBox(height: 15),
                                 _buildInfoCard(
                                   children: [
-                                    _buildInfoRow("Username", user.username,
-                                        Icons.alternate_email),
-                                    _buildDivider(),
-                                    _buildInfoRow("Nama Lengkap", user.fullName,
-                                        Icons.badge_outlined),
+                                    _buildInfoRow(
+                                      "Username",
+                                      user.username,
+                                      Icons.alternate_email,
+                                    ),
                                     _buildDivider(),
                                     _buildInfoRow(
-                                        "Email", user.email, Icons.email_outlined),
+                                      "Nama Lengkap",
+                                      user.fullName,
+                                      Icons.badge_outlined,
+                                    ),
                                     _buildDivider(),
-                                    _buildInfoRow("No. Telepon", user.phoneNumber,
-                                        Icons.phone_outlined),
+                                    _buildInfoRow(
+                                      "Email",
+                                      user.email,
+                                      Icons.email_outlined,
+                                    ),
+                                    _buildDivider(),
+                                    _buildInfoRow(
+                                      "No. Telepon",
+                                      user.phoneNumber,
+                                      Icons.phone_outlined,
+                                    ),
                                     const SizedBox(height: 10),
                                     _buildActionButton(
                                       "Ubah Profil",
@@ -875,7 +957,9 @@ class _ProfileScreenState extends State<ProfileScreen>
 
                                 // Security Section
                                 _buildSectionTitle(
-                                    "Keamanan & Pengaturan", Icons.security_outlined),
+                                  "Keamanan & Pengaturan",
+                                  Icons.security_outlined,
+                                ),
                                 const SizedBox(height: 15),
                                 _buildInfoCard(
                                   children: [
@@ -1020,17 +1104,13 @@ class _ProfileScreenState extends State<ProfileScreen>
                       width: 3,
                     ),
                   ),
-                  child: const Icon(
-                    Icons.check,
-                    color: Colors.white,
-                    size: 16,
-                  ),
+                  child: const Icon(Icons.check, color: Colors.white, size: 16),
                 ),
               ),
             ],
           ),
           const SizedBox(height: 20),
-          
+
           // Name
           Text(
             user.fullName,
@@ -1043,24 +1123,17 @@ class _ProfileScreenState extends State<ProfileScreen>
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 6),
-          
+
           // Email with icon
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(
-                Icons.email_outlined,
-                color: Colors.white60,
-                size: 16,
-              ),
+              Icon(Icons.email_outlined, color: Colors.white60, size: 16),
               const SizedBox(width: 6),
               Flexible(
                 child: Text(
                   user.email,
-                  style: GoogleFonts.inter(
-                    color: Colors.white60,
-                    fontSize: 14,
-                  ),
+                  style: GoogleFonts.inter(color: Colors.white60, fontSize: 14),
                   textAlign: TextAlign.center,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -1068,7 +1141,7 @@ class _ProfileScreenState extends State<ProfileScreen>
             ],
           ),
           const SizedBox(height: 16),
-          
+
           // Status Badge
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -1143,10 +1216,7 @@ class _ProfileScreenState extends State<ProfileScreen>
       decoration: BoxDecoration(
         color: Colors.white.withOpacity(0.05),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: Colors.white.withOpacity(0.1),
-          width: 1,
-        ),
+        border: Border.all(color: Colors.white.withOpacity(0.1), width: 1),
       ),
       child: Column(children: children),
     );
@@ -1198,7 +1268,11 @@ class _ProfileScreenState extends State<ProfileScreen>
   }
 
   Widget _buildActionButton(
-      String title, IconData icon, Color color, VoidCallback onTap) {
+    String title,
+    IconData icon,
+    Color color,
+    VoidCallback onTap,
+  ) {
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(12),
@@ -1256,10 +1330,7 @@ class _ProfileScreenState extends State<ProfileScreen>
           decoration: BoxDecoration(
             color: Colors.white.withOpacity(0.05),
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: Colors.white.withOpacity(0.1),
-              width: 1,
-            ),
+            border: Border.all(color: Colors.white.withOpacity(0.1), width: 1),
           ),
           child: TextField(
             controller: controller,
@@ -1280,10 +1351,7 @@ class _ProfileScreenState extends State<ProfileScreen>
               ),
               prefixIconConstraints: const BoxConstraints(minWidth: 48),
               hintText: "Masukkan $label",
-              hintStyle: GoogleFonts.inter(
-                color: Colors.white30,
-                fontSize: 14,
-              ),
+              hintStyle: GoogleFonts.inter(color: Colors.white30, fontSize: 14),
               border: InputBorder.none,
               contentPadding: const EdgeInsets.symmetric(
                 horizontal: 16,
