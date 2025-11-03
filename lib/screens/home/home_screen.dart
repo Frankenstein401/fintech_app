@@ -1,3 +1,6 @@
+// File: lib/screens/home/home_screen.dart
+// FIXED VERSION - Bottom Bar Hover & QR Modal
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:fintech_app/services/api_service.dart';
@@ -10,7 +13,10 @@ import 'package:fintech_app/models/transaction_model.dart';
 import 'package:fintech_app/screens/history/history_screen.dart';
 import 'package:fintech_app/screens/topup/topup_screen.dart';
 import 'package:fintech_app/screens/favorites/favorites_screen.dart';
+import 'package:fintech_app/screens/profile/profile_screen.dart';
 import 'package:fintech_app/screens/notification/notification_screen.dart';
+import 'package:fintech_app/screens/transfer/send_external_screen.dart';
+import 'package:fintech_app/screens/more/coming_soon_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -36,7 +42,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     _profileData = _apiService.getProfile();
     _historyData = _apiService.getTransactionHistory(limit: 3);
 
-    // Setup animations
     _pulseController = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 2),
@@ -149,7 +154,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   ),
                   TextButton(
                     onPressed: () {
-                      // Pindah ke Halaman History
                       Navigator.push(
                         context,
                         MaterialPageRoute(
@@ -231,9 +235,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           ),
         ),
         GestureDetector(
-          // ⬅️ 1. BUNGKUS DENGAN INI
           onTap: () {
-            // ⬅️ 2. TAMBAHKAN onTAP
             Navigator.push(
               context,
               MaterialPageRoute(
@@ -242,7 +244,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             );
           },
           child: Container(
-            // ⬅️ 3. INI KODE LAMA BOS
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
               color: Colors.white.withOpacity(0.05),
@@ -354,7 +355,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   builder: (context, child) {
                     return Transform.scale(
                       scale: _pulseAnimation.value,
-                      child: Container(
+                      child: SizedBox(
                         width: 85,
                         height: 85,
                         child: Stack(
@@ -449,13 +450,20 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         _buildActionButton(
           icon: Icons.send_outlined,
           label: "Send",
-          onTap: () => print("Send Money tapped"),
+          onTap: () {
+            // Pindah ke Halaman Send External (Dummy)
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const SendExternalScreen(),
+              ),
+            );
+          },
         ),
         _buildActionButton(
           icon: Icons.call_received_outlined,
-          label: "Setor Dana", // ⬅️ Ganti labelnya
+          label: "Setor Dana",
           onTap: () {
-            // Pindah ke Halaman Top-Up
             Navigator.push(
               context,
               MaterialPageRoute(builder: (context) => const TopupScreen()),
@@ -479,7 +487,13 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         _buildActionButton(
           icon: Icons.more_horiz,
           label: "More",
-          onTap: () => print("More tapped"),
+          onTap: () {
+            // Pindah ke Halaman Coming Soon
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const ComingSoonScreen()),
+            );
+          },
         ),
       ],
     );
@@ -686,8 +700,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
   }
 
-  // Ganti fungsi _buildTransactionList() di home_screen.dart dengan ini:
-
   Widget _buildTransactionList() {
     return FutureBuilder<Map<String, dynamic>>(
       future: _historyData,
@@ -700,10 +712,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             ),
           );
         }
-
-        // ⬇️ DEBUG: Print snapshot data
-        print("📦 Snapshot hasData: ${snapshot.hasData}");
-        print("📦 Snapshot data: ${snapshot.data}");
 
         if (!snapshot.hasData || snapshot.data!['success'] == false) {
           return Center(
@@ -718,23 +726,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         }
 
         final List<Transaction> transactions = snapshot.data!['data'];
-
-        // ⬇️ DEBUG: Print jumlah transaksi
-        print("🔢 Total transactions: ${transactions.length}");
-
-        // ⬇️ DEBUG: Print detail setiap transaksi
-        for (int i = 0; i < transactions.length; i++) {
-          final t = transactions[i];
-          print("━━━━━━━━━━━━━━━━━━━━━━━━━━");
-          print("📊 Transaction #$i:");
-          print("   ID: ${t.transactionId}");
-          print("   TYPE: ${t.type}"); // ⬅️ FOKUS KE INI!
-          print("   Amount: ${t.amount}");
-          print("   Sender: ${t.sender['full_name']}");
-          print("   Receiver: ${t.receiver['full_name']}");
-          print("   Created: ${t.createdAt}");
-        }
-        print("━━━━━━━━━━━━━━━━━━━━━━━━━━");
 
         if (transactions.isEmpty) {
           return Center(
@@ -751,10 +742,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         return Column(
           children: transactions.map((transaction) {
             final bool isSent = transaction.type == 'sent';
-
-            // ⬇️ DEBUG: Print kondisi per item
-            print("🎯 Rendering ${transaction.transactionId}: isSent=$isSent");
-
             final String title = isSent
                 ? "Transfer ke ${transaction.receiver['full_name']}"
                 : "Terima dari ${transaction.sender['full_name']}";
@@ -883,29 +870,41 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   Widget _buildNavItem(IconData icon, String label, int index) {
     bool isActive = _currentIndex == index;
     return GestureDetector(
-      onTap: () {
-        setState(() {
-          _currentIndex = index;
-        });
+      onTap: () async {
+        if (index == 0) {
+          // Home - reset to home
+          setState(() {
+            _currentIndex = 0;
+          });
+          return;
+        }
 
-        // ⬇️ LOGIKA BARU ⬇️
-        if (index == 1) {
-          // Tombol "History"
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => const HistoryScreen()),
-          );
-        } else if (index == 3) {
-          // ⬅️ Tombol "Favorite" (index 3)
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => const FavoritesScreen()),
-          );
-        } else if (index == 0) {
-          // Tombol Home, tidak perlu navigasi
-        } else {
-          print("$label tapped");
-          // TODO: Nanti kita atur navigasi untuk Profile
+        // For other items, navigate then reset
+        Widget destination;
+        switch (index) {
+          case 1:
+            destination = const HistoryScreen();
+            break;
+          case 3:
+            destination = const FavoritesScreen();
+            break;
+          case 4:
+            destination = const ProfileScreen();
+            break;
+          default:
+            return;
+        }
+
+        await Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => destination),
+        );
+
+        // Reset to home after returning
+        if (mounted) {
+          setState(() {
+            _currentIndex = 0;
+          });
         }
       },
       child: Container(
@@ -1003,80 +1002,221 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   void _showQrOptions(BuildContext context) {
     showModalBottomSheet(
       context: context,
-      backgroundColor: const Color(0xFF23265A),
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(20),
-          topRight: Radius.circular(20),
-        ),
-      ),
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
       builder: (context) {
         return Container(
-          padding: const EdgeInsets.all(20),
-          height: 220,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                "Pindai QR",
-                style: GoogleFonts.poppins(
-                  color: Colors.white,
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 20),
-              ListTile(
-                leading: const Icon(
-                  Icons.qr_code_scanner,
-                  color: Colors.blueAccent,
-                  size: 30,
-                ),
-                title: Text(
-                  "Pindai untuk Bayar",
-                  style: GoogleFonts.poppins(color: Colors.white, fontSize: 16),
-                ),
-                subtitle: Text(
-                  "Gunakan kamera untuk memindai QR",
-                  style: GoogleFonts.poppins(color: Colors.white70),
-                ),
-                onTap: () {
-                  Navigator.pop(context);
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const QrScannerScreen(),
-                    ),
-                  );
-                },
-              ),
-              const Divider(color: Colors.white24),
-              ListTile(
-                leading: const Icon(
-                  Icons.qr_code_2,
-                  color: Colors.blueAccent,
-                  size: 30,
-                ),
-                title: Text(
-                  "Tampilkan QR Saya",
-                  style: GoogleFonts.poppins(color: Colors.white, fontSize: 16),
-                ),
-                subtitle: Text(
-                  "Tampilkan QR untuk menerima pembayaran",
-                  style: GoogleFonts.poppins(color: Colors.white70),
-                ),
-                onTap: () {
-                  Navigator.pop(context);
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => const MyQrScreen()),
-                  );
-                },
+          padding: const EdgeInsets.all(28),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [const Color(0xFF1A1A2E), const Color(0xFF0F0F1E)],
+            ),
+            borderRadius: const BorderRadius.only(
+              topLeft: Radius.circular(28),
+              topRight: Radius.circular(28),
+            ),
+            border: Border.all(
+              color: const Color(0xFF6366F1).withOpacity(0.3),
+              width: 1,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF6366F1).withOpacity(0.2),
+                blurRadius: 30,
+                spreadRadius: 5,
               ),
             ],
           ),
+          child: SafeArea(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Handle bar
+                Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.3),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                const SizedBox(height: 24),
+
+                // Title
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
+                        ),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(
+                        Icons.qr_code_scanner,
+                        color: Colors.white,
+                        size: 24,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Text(
+                      "Pindai QR Code",
+                      style: GoogleFonts.inter(
+                        color: Colors.white,
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Padding(
+                  padding: const EdgeInsets.only(left: 56),
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      "Pilih metode QR yang ingin digunakan",
+                      style: GoogleFonts.inter(
+                        color: Colors.white60,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 24),
+
+                // Option 1: Scan QR
+                _buildQrOption(
+                  context: context,
+                  icon: Icons.qr_code_scanner,
+                  title: "Pindai untuk Bayar",
+                  subtitle: "Scan QR untuk melakukan pembayaran",
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
+                  ),
+                  onTap: () {
+                    Navigator.pop(context);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const QrScannerScreen(),
+                      ),
+                    );
+                  },
+                ),
+                const SizedBox(height: 12),
+
+                // Option 2: Show My QR
+                _buildQrOption(
+                  context: context,
+                  icon: Icons.qr_code_2,
+                  title: "Tampilkan QR Saya",
+                  subtitle: "Tampilkan QR untuk menerima pembayaran",
+                  gradient: LinearGradient(
+                    colors: [
+                      const Color(0xFF10B981).withOpacity(0.8),
+                      const Color(0xFF059669).withOpacity(0.8),
+                    ],
+                  ),
+                  onTap: () {
+                    Navigator.pop(context);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const MyQrScreen(),
+                      ),
+                    );
+                  },
+                ),
+                const SizedBox(height: 16),
+              ],
+            ),
+          ),
         );
       },
+    );
+  }
+
+  Widget _buildQrOption({
+    required BuildContext context,
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required Gradient gradient,
+    required VoidCallback onTap,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white.withOpacity(0.1), width: 1),
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(16),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                // Icon with gradient
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    gradient: gradient,
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.2),
+                        blurRadius: 8,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Icon(icon, color: Colors.white, size: 28),
+                ),
+                const SizedBox(width: 16),
+
+                // Text content
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: GoogleFonts.inter(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        subtitle,
+                        style: GoogleFonts.inter(
+                          color: Colors.white60,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                // Arrow icon
+                Icon(
+                  Icons.arrow_forward_ios,
+                  color: Colors.white.withOpacity(0.5),
+                  size: 16,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

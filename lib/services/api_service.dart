@@ -11,7 +11,7 @@ import 'package:fintech_app/models/favorite_model.dart';
 
 class ApiService {
   // ⬅️ GANTI DENGAN IP KOMPUTER BOS
-  final String _baseUrl = "http://192.168.1.4:8000/api";
+  final String _baseUrl = "http://10.19.17.12:8000/api";
   final _storage = const FlutterSecureStorage();
 
   Future<String?> _getToken() async {
@@ -592,6 +592,156 @@ class ApiService {
       return {
         'success': responseData['success'],
         'message': responseData['message'],
+      };
+    } catch (e) {
+      print(e.toString());
+      return {'success': false, 'message': 'Tidak dapat terhubung ke server.'};
+    }
+  }
+
+  // --- FUNGSI BARU 1: LOGOUT ---
+  Future<Map<String, dynamic>> logout() async {
+    String? token = await _getToken();
+    if (token == null)
+      return {'success': false, 'message': 'Token tidak ditemukan.'};
+
+    try {
+      await http.post(
+        Uri.parse("$_baseUrl/auth/logout"),
+        headers: {
+          'Accept': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      await _storage.delete(key: 'auth_token'); // Hapus token dari HP
+      return {'success': true, 'message': 'Logout berhasil.'};
+    } catch (e) {
+      print(e.toString());
+      await _storage.delete(
+        key: 'auth_token',
+      ); // Hapus token lokal juga jika API gagal
+      return {'success': false, 'message': 'Gagal logout.'};
+    }
+  }
+
+  // --- FUNGSI BARU 2: UPDATE PROFIL (Nama & Username) ---
+  Future<Map<String, dynamic>> updateProfile(String fullName, String username) async {
+    String? token = await _getToken();
+    if (token == null) return {'success': false, 'message': 'Token tidak ditemukan.'};
+
+    try {
+      final response = await http.put( // ⬅️ Method PUT
+        Uri.parse("$_baseUrl/profile/update-profile"), // Sesuai rute baru Bos
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode({
+          'full_name': fullName,
+          'username': username,
+        }),
+      );
+      final responseData = jsonDecode(response.body);
+      return {'success': responseData['success'], 'message': responseData['message']};
+    } catch (e) {
+      print(e.toString());
+      return {'success': false, 'message': 'Tidak dapat terhubung ke server.'};
+    }
+  }
+
+  // --- FUNGSI BARU 3: GANTI PASSWORD (Saat user login) ---
+  Future<Map<String, dynamic>> changePassword(String currentPassword, String newPassword) async {
+    String? token = await _getToken();
+    if (token == null) return {'success': false, 'message': 'Token tidak ditemukan.'};
+
+    try {
+      final response = await http.post(
+        Uri.parse("$_baseUrl/profile/change-password"),
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode({
+          'current_password': currentPassword,
+          'new_password': newPassword,
+        }),
+      );
+      final responseData = jsonDecode(response.body);
+      return {'success': responseData['success'], 'message': responseData['message']};
+    } catch (e) {
+      print(e.toString());
+      return {'success': false, 'message': 'Tidak dapat terhubung ke server.'};
+    }
+  }
+
+  // --- FUNGSI BARU 4: GANTI PIN (Saat user login) ---
+  Future<Map<String, dynamic>> changePin(String currentPassword, String newPin) async {
+    String? token = await _getToken();
+    if (token == null) return {'success': false, 'message': 'Token tidak ditemukan.'};
+
+    try {
+      final response = await http.post(
+        Uri.parse("$_baseUrl/profile/change-pin"),
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode({
+          'current_password': currentPassword,
+          'new_pin': newPin,
+        }),
+      );
+      final responseData = jsonDecode(response.body);
+      return {'success': responseData['success'], 'message': responseData['message']};
+    } catch (e) {
+      print(e.toString());
+      return {'success': false, 'message': 'Tidak dapat terhubung ke server.'};
+    }
+  }
+
+  // --- FUNGSI BARU 5: LUPA PIN (Minta OTP) ---
+  Future<Map<String, dynamic>> forgotPin(String email) async {
+     try {
+      final response = await http.post(
+        Uri.parse("$_baseUrl/auth/forgot-pin"),
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: jsonEncode({'email': email}),
+      );
+      final responseData = jsonDecode(response.body);
+      return {'success': true, 'message': responseData['message']};
+    } catch (e) {
+      print(e.toString());
+      return {'success': false, 'message': 'Tidak dapat terhubung ke server.'};
+    }
+  }
+
+  // --- FUNGSI BARU 6: LUPA PIN (Reset) ---
+  Future<Map<String, dynamic>> resetPin(
+      String email, String otpCode, String newPin) async {
+     try {
+      final response = await http.post(
+        Uri.parse("$_baseUrl/auth/reset-pin"),
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: jsonEncode({
+          'email': email,
+          'otp_code': otpCode,
+          'new_pin': newPin,
+        }),
+      );
+      final responseData = jsonDecode(response.body);
+      return {
+        'success': responseData['success'] ?? false,
+        'message': responseData['message']
       };
     } catch (e) {
       print(e.toString());

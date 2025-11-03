@@ -35,7 +35,7 @@ class _LoginScreenState extends State<LoginScreen>
   // Bank images for carousel
   final List<String> _bankImages = [
     'https://images.unsplash.com/photo-1556742502-ec7c0e9f34b1?w=800', // Modern bank building
-    'https://images.unsplash.com/photo-1554224311-beee4ecddf80?w=800', // Banking cards
+    'https://images.unsplash.com/photo-1501167786227-4cba60f6d58f?w=800', // Banking cards
     'https://images.unsplash.com/photo-1579621970563-ebec7560ff3e?w=800', // Digital banking
     'https://images.unsplash.com/photo-1563013544-824ae1b704d3?w=800', // Bank interior
   ];
