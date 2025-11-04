@@ -339,6 +339,9 @@ class _OtpScreenState extends State<OtpScreen>
                   const SizedBox(height: 40),
 
                   // OTP Input Boxes
+                  // ONLY THE OTP INPUT SECTION - Copy this to replace your _buildOtpInputBoxes section
+
+                  // OTP Input Boxes - FIXED VERSION
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: List.generate(6, (index) {
@@ -355,42 +358,46 @@ class _OtpScreenState extends State<OtpScreen>
                             width: _focusNodes[index].hasFocus ? 2 : 1,
                           ),
                         ),
-                        child: TextField(
-                          controller: _otpControllers[index],
-                          focusNode: _focusNodes[index],
-                          keyboardType: TextInputType.number,
-                          textAlign: TextAlign.center, // ⬅️ Tetap (Horizontal)
-                          // ⬇️ TAMBAHKAN 1 BARIS INI (Vertical) ⬇️
-                          textAlignVertical: TextAlignVertical.center,
-
-                          maxLength: 1,
-                          style: GoogleFonts.inter(
-                            color: Colors.white,
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
+                        child: Transform.translate(
+                          offset: const Offset(
+                            0,
+                            -2,
+                          ), // ✅ FORCE MOVE UP 2px if needed
+                          child: Center(
+                            child: TextField(
+                              controller: _otpControllers[index],
+                              focusNode: _focusNodes[index],
+                              keyboardType: TextInputType.number,
+                              textAlign: TextAlign.center,
+                              maxLength: 1,
+                              style: GoogleFonts.inter(
+                                color: Colors.white,
+                                fontSize: 24,
+                                fontWeight: FontWeight.bold,
+                                height: 1.0,
+                              ),
+                              decoration: const InputDecoration(
+                                counterText: "",
+                                border: InputBorder.none,
+                                contentPadding: EdgeInsets.zero,
+                                isDense: true,
+                              ),
+                              onChanged: (value) {
+                                if (value.length == 1 && index < 5) {
+                                  FocusScope.of(
+                                    context,
+                                  ).requestFocus(_focusNodes[index + 1]);
+                                } else if (value.isEmpty && index > 0) {
+                                  FocusScope.of(
+                                    context,
+                                  ).requestFocus(_focusNodes[index - 1]);
+                                }
+                                if (_otpCode.length == 6) {
+                                  _onOtpCompleted();
+                                }
+                              },
+                            ),
                           ),
-                          decoration: const InputDecoration(
-                            counterText: "",
-                            border: InputBorder.none,
-
-                            // ⬇️ KEMBALIKAN/TAMBAHKAN INI ⬇️
-                            // Ini penting untuk menghapus padding internal TextField
-                            contentPadding: EdgeInsets.zero,
-                          ),
-                          onChanged: (value) {
-                            if (value.length == 1 && index < 5) {
-                              FocusScope.of(
-                                context,
-                              ).requestFocus(_focusNodes[index + 1]);
-                            } else if (value.isEmpty && index > 0) {
-                              FocusScope.of(
-                                context,
-                              ).requestFocus(_focusNodes[index - 1]);
-                            }
-                            if (_otpCode.length == 6) {
-                              _onOtpCompleted();
-                            }
-                          },
                         ),
                       );
                     }),

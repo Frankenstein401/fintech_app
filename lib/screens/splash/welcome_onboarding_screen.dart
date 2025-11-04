@@ -17,38 +17,104 @@ class _WelcomeOnboardingScreenState extends State<WelcomeOnboardingScreen>
   late AnimationController _floatController;
   late AnimationController _fadeController;
   
+  // NEW: Entrance animation controller
+  late AnimationController _entranceController;
+  
   late Animation<double> _rotationAnimation;
   late Animation<double> _floatAnimation;
   late Animation<double> _fadeAnimation;
+  
+  // NEW: Entrance animations
+  late Animation<double> _ringScaleAnimation;
+  late Animation<double> _elementsOpacityAnimation;
+  late Animation<double> _elementsScaleAnimation;
 
   @override
   void initState() {
     super.initState();
 
+    // Rotation animation (will start after entrance)
     _rotationController = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 20),
-    )..repeat();
+    );
 
+    // Float animation (will start after entrance)
     _floatController = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 3),
-    )..repeat(reverse: true);
+    );
 
+    // Page fade
     _fadeController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1200),
     );
 
+    // NEW: Entrance animation
+    _entranceController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1800), // 1.8 seconds total
+    );
+
     _rotationAnimation = Tween<double>(begin: 0, end: 2 * math.pi).animate(_rotationController);
+    
     _floatAnimation = Tween<double>(begin: -15, end: 15).animate(
       CurvedAnimation(parent: _floatController, curve: Curves.easeInOut),
     );
+    
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(parent: _fadeController, curve: Curves.easeIn),
     );
 
+    // NEW: Ring scale animation (shrink from 2x to 1x)
+    // Duration: 0.0 - 1.2 seconds
+    _ringScaleAnimation = Tween<double>(begin: 2.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _entranceController,
+        curve: const Interval(
+          0.0,
+          0.67, // 1.2s of 1.8s = 0.67
+          curve: Curves.easeInOutCubic,
+        ),
+      ),
+    );
+
+    // NEW: Elements spawn animation (all together after ring shrinks)
+    // Start at 1.2s, end at 1.8s
+    _elementsOpacityAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _entranceController,
+        curve: const Interval(
+          0.67, // Start after ring animation
+          1.0,
+          curve: Curves.easeOut,
+        ),
+      ),
+    );
+
+    _elementsScaleAnimation = Tween<double>(begin: 0.5, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _entranceController,
+        curve: const Interval(
+          0.67,
+          1.0,
+          curve: Curves.easeOutBack, // Slight bounce effect
+        ),
+      ),
+    );
+
+    // Start animations with delay
     _fadeController.forward();
+    
+    // Start entrance after 0.3 second delay
+    Future.delayed(const Duration(milliseconds: 300), () {
+      _entranceController.forward().then((_) {
+        // Start rotation and float after entrance is complete
+        _rotationController.repeat();
+        _floatController.repeat(reverse: true);
+      });
+    });
   }
 
   @override
@@ -56,6 +122,7 @@ class _WelcomeOnboardingScreenState extends State<WelcomeOnboardingScreen>
     _rotationController.dispose();
     _floatController.dispose();
     _fadeController.dispose();
+    _entranceController.dispose();
     super.dispose();
   }
 
@@ -94,13 +161,17 @@ class _WelcomeOnboardingScreenState extends State<WelcomeOnboardingScreen>
           opacity: _fadeAnimation,
           child: Stack(
             children: [
-              // 3D Animated Elements - Positioned Higher
+              // 3D Animated Elements - WITH ENTRANCE ANIMATION
               Positioned(
                 top: 60,
                 left: 0,
                 right: 0,
                 child: AnimatedBuilder(
-                  animation: Listenable.merge([_rotationAnimation, _floatAnimation]),
+                  animation: Listenable.merge([
+                    _entranceController,
+                    _rotationAnimation,
+                    _floatAnimation,
+                  ]),
                   builder: (context, child) {
                     return Transform.translate(
                       offset: Offset(0, _floatAnimation.value),
@@ -110,101 +181,113 @@ class _WelcomeOnboardingScreenState extends State<WelcomeOnboardingScreen>
                         child: Stack(
                           alignment: Alignment.center,
                           children: [
-                            // Outer rotating ring
-                            Transform.rotate(
-                              angle: _rotationAnimation.value,
-                              child: Container(
-                                width: 280,
-                                height: 280,
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  border: Border.all(
-                                    color: const Color(0xFF6366F1).withOpacity(0.25),
-                                    width: 2,
+                            // Outer rotating ring - WITH SCALE ANIMATION
+                            Transform.scale(
+                              scale: _ringScaleAnimation.value,
+                              child: Transform.rotate(
+                                angle: _rotationAnimation.value,
+                                child: Container(
+                                  width: 280,
+                                  height: 280,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
+                                      color: const Color(0xFF6366F1).withOpacity(0.25),
+                                      width: 2,
+                                    ),
                                   ),
                                 ),
                               ),
                             ),
                             
-                            // Middle ring - opposite rotation
-                            Transform.rotate(
-                              angle: -_rotationAnimation.value * 0.7,
-                              child: Container(
-                                width: 200,
-                                height: 200,
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  border: Border.all(
-                                    color: const Color(0xFF8B5CF6).withOpacity(0.25),
-                                    width: 2,
+                            // Middle ring - WITH SCALE ANIMATION (opposite rotation)
+                            Transform.scale(
+                              scale: _ringScaleAnimation.value,
+                              child: Transform.rotate(
+                                angle: -_rotationAnimation.value * 0.7,
+                                child: Container(
+                                  width: 200,
+                                  height: 200,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
+                                      color: const Color(0xFF8B5CF6).withOpacity(0.25),
+                                      width: 2,
+                                    ),
                                   ),
                                 ),
                               ),
                             ),
 
-                            // Floating orbs
+                            // Floating orbs - WITH SPAWN ANIMATION
                             ..._buildFloatingOrbs(),
 
-                            // Center 3D Card
-                            Transform(
-                              transform: Matrix4.identity()
-                                ..setEntry(3, 2, 0.001)
-                                ..rotateY(math.sin(_rotationAnimation.value) * 0.3),
-                              alignment: Alignment.center,
-                              child: Container(
-                                width: 120,
-                                height: 160,
-                                decoration: BoxDecoration(
-                                  gradient: LinearGradient(
-                                    begin: Alignment.topLeft,
-                                    end: Alignment.bottomRight,
-                                    colors: [
-                                      const Color(0xFF6366F1),
-                                      const Color(0xFF8B5CF6),
-                                    ],
-                                  ),
-                                  borderRadius: BorderRadius.circular(20),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: const Color(0xFF6366F1).withOpacity(0.5),
-                                      blurRadius: 35,
-                                      spreadRadius: 8,
+                            // Center 3D Card - WITH SPAWN ANIMATION
+                            Opacity(
+                              opacity: _elementsOpacityAnimation.value,
+                              child: Transform.scale(
+                                scale: _elementsScaleAnimation.value,
+                                child: Transform(
+                                  transform: Matrix4.identity()
+                                    ..setEntry(3, 2, 0.001)
+                                    ..rotateY(math.sin(_rotationAnimation.value) * 0.3),
+                                  alignment: Alignment.center,
+                                  child: Container(
+                                    width: 120,
+                                    height: 160,
+                                    decoration: BoxDecoration(
+                                      gradient: LinearGradient(
+                                        begin: Alignment.topLeft,
+                                        end: Alignment.bottomRight,
+                                        colors: [
+                                          const Color(0xFF6366F1),
+                                          const Color(0xFF8B5CF6),
+                                        ],
+                                      ),
+                                      borderRadius: BorderRadius.circular(20),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: const Color(0xFF6366F1).withOpacity(0.5),
+                                          blurRadius: 35,
+                                          spreadRadius: 8,
+                                        ),
+                                      ],
                                     ),
-                                  ],
-                                ),
-                                child: Stack(
-                                  children: [
-                                    // Card shine effect
-                                    Positioned(
-                                      top: 0,
-                                      left: 0,
-                                      right: 0,
-                                      child: Container(
-                                        height: 50,
-                                        decoration: BoxDecoration(
-                                          borderRadius: const BorderRadius.vertical(
-                                            top: Radius.circular(20),
-                                          ),
-                                          gradient: LinearGradient(
-                                            begin: Alignment.topCenter,
-                                            end: Alignment.bottomCenter,
-                                            colors: [
-                                              Colors.white.withOpacity(0.25),
-                                              Colors.transparent,
-                                            ],
+                                    child: Stack(
+                                      children: [
+                                        // Card shine effect
+                                        Positioned(
+                                          top: 0,
+                                          left: 0,
+                                          right: 0,
+                                          child: Container(
+                                            height: 50,
+                                            decoration: BoxDecoration(
+                                              borderRadius: const BorderRadius.vertical(
+                                                top: Radius.circular(20),
+                                              ),
+                                              gradient: LinearGradient(
+                                                begin: Alignment.topCenter,
+                                                end: Alignment.bottomCenter,
+                                                colors: [
+                                                  Colors.white.withOpacity(0.25),
+                                                  Colors.transparent,
+                                                ],
+                                              ),
+                                            ),
                                           ),
                                         ),
-                                      ),
+                                        // Card content
+                                        Center(
+                                          child: Icon(
+                                            Icons.account_balance,
+                                            size: 56,
+                                            color: Colors.white.withOpacity(0.9),
+                                          ),
+                                        ),
+                                      ],
                                     ),
-                                    // Card content
-                                    Center(
-                                      child: Icon(
-                                        Icons.account_balance,
-                                        size: 56,
-                                        color: Colors.white.withOpacity(0.9),
-                                      ),
-                                    ),
-                                  ],
+                                  ),
                                 ),
                               ),
                             ),
@@ -216,7 +299,7 @@ class _WelcomeOnboardingScreenState extends State<WelcomeOnboardingScreen>
                 ),
               ),
 
-              // Content - Bottom Section
+              // Content - Bottom Section (NO CHANGES)
               Positioned(
                 left: 0,
                 right: 0,
@@ -359,124 +442,148 @@ class _WelcomeOnboardingScreenState extends State<WelcomeOnboardingScreen>
 
   List<Widget> _buildFloatingOrbs() {
     return [
-      // Orb 1 - Top Right
+      // Orb 1 - Top Right - WITH SPAWN ANIMATION
       Positioned(
         top: 30,
         right: 40,
-        child: Transform.rotate(
-          angle: _rotationAnimation.value,
-          child: Transform.translate(
-            offset: Offset(0, math.sin(_rotationAnimation.value * 2) * 8),
-            child: Container(
-              width: 14,
-              height: 14,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: RadialGradient(
-                  colors: [
-                    const Color(0xFF6366F1),
-                    const Color(0xFF6366F1).withOpacity(0.3),
-                  ],
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: const Color(0xFF6366F1).withOpacity(0.5),
-                    blurRadius: 15,
+        child: Opacity(
+          opacity: _elementsOpacityAnimation.value,
+          child: Transform.scale(
+            scale: _elementsScaleAnimation.value,
+            child: Transform.rotate(
+              angle: _rotationAnimation.value,
+              child: Transform.translate(
+                offset: Offset(0, math.sin(_rotationAnimation.value * 2) * 8),
+                child: Container(
+                  width: 14,
+                  height: 14,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: RadialGradient(
+                      colors: [
+                        const Color(0xFF6366F1),
+                        const Color(0xFF6366F1).withOpacity(0.3),
+                      ],
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFF6366F1).withOpacity(0.5),
+                        blurRadius: 15,
+                      ),
+                    ],
                   ),
-                ],
+                ),
               ),
             ),
           ),
         ),
       ),
       
-      // Orb 2 - Right
+      // Orb 2 - Right - WITH SPAWN ANIMATION
       Positioned(
         right: 30,
         top: 100,
-        child: Transform.rotate(
-          angle: _rotationAnimation.value * 0.8,
-          child: Transform.translate(
-            offset: Offset(math.cos(_rotationAnimation.value * 1.5) * 8, 0),
-            child: Container(
-              width: 18,
-              height: 18,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: RadialGradient(
-                  colors: [
-                    const Color(0xFF8B5CF6),
-                    const Color(0xFF8B5CF6).withOpacity(0.3),
-                  ],
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: const Color(0xFF8B5CF6).withOpacity(0.5),
-                    blurRadius: 15,
+        child: Opacity(
+          opacity: _elementsOpacityAnimation.value,
+          child: Transform.scale(
+            scale: _elementsScaleAnimation.value,
+            child: Transform.rotate(
+              angle: _rotationAnimation.value * 0.8,
+              child: Transform.translate(
+                offset: Offset(math.cos(_rotationAnimation.value * 1.5) * 8, 0),
+                child: Container(
+                  width: 18,
+                  height: 18,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: RadialGradient(
+                      colors: [
+                        const Color(0xFF8B5CF6),
+                        const Color(0xFF8B5CF6).withOpacity(0.3),
+                      ],
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFF8B5CF6).withOpacity(0.5),
+                        blurRadius: 15,
+                      ),
+                    ],
                   ),
-                ],
+                ),
               ),
             ),
           ),
         ),
       ),
       
-      // Orb 3 - Left
+      // Orb 3 - Left - WITH SPAWN ANIMATION
       Positioned(
         left: 40,
         top: 80,
-        child: Transform.rotate(
-          angle: -_rotationAnimation.value * 0.6,
-          child: Transform.translate(
-            offset: Offset(0, math.cos(_rotationAnimation.value * 1.8) * 8),
-            child: Container(
-              width: 12,
-              height: 12,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: RadialGradient(
-                  colors: [
-                    const Color(0xFF10B981),
-                    const Color(0xFF10B981).withOpacity(0.3),
-                  ],
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: const Color(0xFF10B981).withOpacity(0.5),
-                    blurRadius: 15,
+        child: Opacity(
+          opacity: _elementsOpacityAnimation.value,
+          child: Transform.scale(
+            scale: _elementsScaleAnimation.value,
+            child: Transform.rotate(
+              angle: -_rotationAnimation.value * 0.6,
+              child: Transform.translate(
+                offset: Offset(0, math.cos(_rotationAnimation.value * 1.8) * 8),
+                child: Container(
+                  width: 12,
+                  height: 12,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: RadialGradient(
+                      colors: [
+                        const Color(0xFF10B981),
+                        const Color(0xFF10B981).withOpacity(0.3),
+                      ],
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFF10B981).withOpacity(0.5),
+                        blurRadius: 15,
+                      ),
+                    ],
                   ),
-                ],
+                ),
               ),
             ),
           ),
         ),
       ),
 
-      // Orb 4 - Bottom Left
+      // Orb 4 - Bottom Left - WITH SPAWN ANIMATION
       Positioned(
         left: 50,
         bottom: 40,
-        child: Transform.rotate(
-          angle: _rotationAnimation.value * 1.2,
-          child: Transform.translate(
-            offset: Offset(math.sin(_rotationAnimation.value * 1.3) * 8, 0),
-            child: Container(
-              width: 16,
-              height: 16,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: RadialGradient(
-                  colors: [
-                    const Color(0xFFFBBF24),
-                    const Color(0xFFFBBF24).withOpacity(0.3),
-                  ],
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: const Color(0xFFFBBF24).withOpacity(0.5),
-                    blurRadius: 15,
+        child: Opacity(
+          opacity: _elementsOpacityAnimation.value,
+          child: Transform.scale(
+            scale: _elementsScaleAnimation.value,
+            child: Transform.rotate(
+              angle: _rotationAnimation.value * 1.2,
+              child: Transform.translate(
+                offset: Offset(math.sin(_rotationAnimation.value * 1.3) * 8, 0),
+                child: Container(
+                  width: 16,
+                  height: 16,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: RadialGradient(
+                      colors: [
+                        const Color(0xFFFBBF24),
+                        const Color(0xFFFBBF24).withOpacity(0.3),
+                      ],
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFFFBBF24).withOpacity(0.5),
+                        blurRadius: 15,
+                      ),
+                    ],
                   ),
-                ],
+                ),
               ),
             ),
           ),
